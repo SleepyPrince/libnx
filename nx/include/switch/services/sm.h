@@ -114,6 +114,20 @@ static inline void serviceCreateDomainSubservice(Service* s, Service* parent, u3
 }
 
 /**
+ * @brief Creates a domain subservice object from a parent service.
+ * @param[out] s Service object.
+ * @param[in] parent Parent service, necessarily a domain or domain subservice.
+ * @param[in] object_id Object ID for this subservice.
+ */
+static inline void serviceCreateSubservice(Service* s, Service* parent, IpcParsedCommand* r, int i) {
+    if (r->IsDomainResponse) {
+        return serviceCreateDomainSubservice(s, parent, r->OutObjectIds[i]);
+    } else {
+        return serviceCreate(s, r->Handles[i]);
+    }
+}
+
+/**
  * @brief Converts a regular service to a domain.
  * @param[in] s Service object.
  * @return Result code.
@@ -151,6 +165,37 @@ static inline void serviceClose(Service* s) {
     }
 
     s->type = ServiceType_Uninitialized;
+}
+
+
+
+/**
+ * @brief Prepares the header of an IPC command structure for a service.
+ * @param s Service to prepare message header for
+ * @param cmd IPC command structure.
+ * @param sizeof_raw Size in bytes of the raw data structure to embed inside the IPC request
+ * @return Pointer to the raw embedded data structure in the request, ready to be filled out.
+ */
+static inline void* serviceIpcPrepareHeader(Service* s, IpcCommand* cmd, size_t sizeof_raw) {
+    if (serviceIsDomain(s) || serviceIsDomainSubservice(s)) {
+        return ipcPrepareHeaderForDomain(cmd, sizeof_raw, serviceGetObjectId(s));
+    } else {
+        return ipcPrepareHeader(cmd, sizeof_raw);
+    }
+}
+
+/**
+ * @brief Parse an IPC command response into an IPC parsed command structure for a service.
+ * @param s Service to prepare message header for
+ * @param r IPC parsed command structure to fill in.
+ * @return Result code.
+ */
+static inline Result serviceIpcParse(Service* s, IpcParsedCommand* r, size_t sizeof_raw) {
+    if (serviceIsDomain(s) || serviceIsDomainSubservice(s)) {
+        return ipcParseDomainResponse(r, sizeof_raw);
+    } else {
+        return ipcParse(r);
+    }
 }
 
 /**

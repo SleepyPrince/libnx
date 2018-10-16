@@ -17,7 +17,6 @@ typedef enum {
     ServiceType_Domain,             ///< Domain.
     ServiceType_DomainSubservice,   ///< Domain subservice;
     ServiceType_Override,           ///< Service overriden in the homebrew environment.
-    ServiceType_OverrideDomain,     ///< Domain overriden in the homebrew environment.
 } ServiceType;
 
 /// Service object structure.
@@ -33,7 +32,7 @@ typedef struct {
  * @return true if overriden.
  */
 static inline bool serviceIsOverride(Service* s) {
-    return s->type == ServiceType_Override || s->type == ServiceType_OverrideDomain;
+    return s->type == ServiceType_Override;
 }
 
 /**
@@ -51,7 +50,7 @@ static inline bool serviceIsActive(Service* s) {
  * @return true if a domain.
  */
 static inline bool serviceIsDomain(Service* s) {
-    return s->type == ServiceType_Domain || s->type == ServiceType_OverrideDomain;
+    return s->type == ServiceType_Domain;
 }
 
 /**
@@ -135,13 +134,17 @@ static inline void serviceCreateSubservice(Service* s, Service* parent, IpcParse
  * @return Result code.
  */
 static inline Result serviceConvertToDomain(Service* s) {
-    Result rc = ipcConvertSessionToDomain(s->handle, &s->object_id);
-    if(R_SUCCEEDED(rc)) {
-        if (s->type == ServiceType_Override) {
-            s->type = ServiceType_OverrideDomain;
-        } else {
-            s->type = ServiceType_Domain;
+    Result rc = 0;
+    if (serviceIsOverride(s)) {
+        rc = ipcCloneSession(s->handle, 1, &s->handle);
+        if (R_FAILED(rc)) {
+            return rc;
         }
+        s->type = ServiceType_Normal;
+    }
+    rc = ipcConvertSessionToDomain(s->handle, &s->object_id);
+    if(R_SUCCEEDED(rc)) {
+        s->type = ServiceType_Domain;
     }
     return rc;
 }
@@ -164,7 +167,6 @@ static inline void serviceClose(Service* s) {
         break;
 
     case ServiceType_Override:
-    case ServiceType_OverrideDomain:
         // Don't close because we don't own the overridden handle.
         break;
 

@@ -143,7 +143,7 @@ static inline Result serviceConvertToDomain(Service* s) {
         s->type = ServiceType_Normal;
     }
     rc = ipcConvertSessionToDomain(s->handle, &s->object_id);
-    if(R_SUCCEEDED(rc)) {
+    if (R_SUCCEEDED(rc)) {
         s->type = ServiceType_Domain;
     }
     return rc;

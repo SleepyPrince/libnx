@@ -114,10 +114,11 @@ static inline void serviceCreateDomainSubservice(Service* s, Service* parent, u3
 }
 
 /**
- * @brief Creates a domain subservice object from a parent service.
+ * @brief Creates a subservice object from a parent service.
  * @param[out] s Service object.
- * @param[in] parent Parent service, necessarily a domain or domain subservice.
- * @param[in] object_id Object ID for this subservice.
+ * @param[in] parent Parent service, possibly a domain or domain subservice.
+ * @param[in] r Parsed IPC command containing handles/object IDs to create subservice from.
+ * @param[in] i The index of the handle/object ID to create subservice from.
  */
 static inline void serviceCreateSubservice(Service* s, Service* parent, IpcParsedCommand* r, int i) {
     if (r->IsDomainResponse) {
